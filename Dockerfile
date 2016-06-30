@@ -1,4 +1,4 @@
-FROM java:openjdk-7-jre
+FROM winking/oraclejre:7u80
 MAINTAINER winking.zhang@grapecity.com
 
 # Setup useful environment variables
