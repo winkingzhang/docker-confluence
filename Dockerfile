@@ -24,8 +24,9 @@ RUN set -x \
     && apt-get install --quiet --yes --no-install-recommends libtcnative-1 xmlstarlet \
     && apt-get clean \
     && mkdir -p                           "${CONFLUENCE_HOME}" \
-    && chmod -R 700                       "${CONFLUENCE_HOME}" \
-    && chown ${RUN_USER}:${RUN_GROUP}     "${CONFLUENCE_HOME}" \
+    && mkdir -p                           "${CONFLUENCE_HOME}/data" \
+    && chmod -R 700                       "${CONFLUENCE_HOME}/data" \
+    && chown ${RUN_USER}:${RUN_GROUP}     "${CONFLUENCE_HOME}/data" \
     && mkdir -p                           "${CONFLUENCE_INSTALL}/conf" \
     && curl -Ls                           "${CONFLUENCE_DOWNLOAD_URL}" | tar -xz --directory "${CONFLUENCE_INSTALL}" --strip-components=1 --no-same-owner \
     && chmod -R 700                       "${CONFLUENCE_INSTALL}/conf" \
@@ -36,7 +37,7 @@ RUN set -x \
     && chown -R ${RUN_USER}:${RUN_GROUP}  "${CONFLUENCE_INSTALL}/temp" \
     && chown -R ${RUN_USER}:${RUN_GROUP}  "${CONFLUENCE_INSTALL}/logs" \
     && chown -R ${RUN_USER}:${RUN_GROUP}  "${CONFLUENCE_INSTALL}/work" \
-    && echo -e                            "\nconfluence.home=${CONFLUENCE_HOME}" >> "${CONFLUENCE_INSTALL}/confluence/WEB-INF/classes/confluence-init.properties" \
+    && echo -e                            "\nconfluence.home=${CONFLUENCE_HOME}/data" >> "${CONFLUENCE_INSTALL}/confluence/WEB-INF/classes/confluence-init.properties" \
     && xmlstarlet                         ed --inplace \
         --delete                          "Server/@debug" \
         --delete                          "Server/Service/Connector/@debug" \
@@ -64,6 +65,10 @@ VOLUME ["${CONFLUENCE_INSTALL}", "${CONFLUENCE_HOME}"]
 
 # Set the default working directory as the Confluence installation directory.
 WORKDIR ${CONFLUENCE_INSTALL}
+
+COPY confluence-entrypoint.sh /usr/local/bin/
+RUN ln -s usr/local/bin/confluence-entrypoint.sh /entrypoint.sh # backwards compat
+ENTRYPOINT ["confluence-entrypoint.sh"]
 
 # Run Atlassian Confluence as a foreground process by default.
 CMD ["./bin/catalina.sh", "run"]
